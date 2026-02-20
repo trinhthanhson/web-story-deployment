@@ -80,16 +80,16 @@ WSGI_APPLICATION = 'webtruyen.wsgi.application'
 
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
+import dj_database_url
+import os
 
+# Tìm đến phần DATABASES và thay bằng đoạn này:
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'webtruyen',      # Tên Database PostgreSQL bạn đã tạo
-        'USER': 'postgres',        # Username của bạn (thường là 'postgres')
-        'PASSWORD': '1234',    # Mật khẩu của PostgreSQL user
-        'HOST': 'localhost',                # Hoặc địa chỉ IP nếu DB nằm trên server khác
-        'PORT': '5432',                     # Port mặc định của PostgreSQL
-    }
+    'default': dj_database_url.config(
+        # Django sẽ tìm biến tên là 'DATABASE_URL' trên Render
+        default=os.environ.get('DATABASE_URL'),
+        conn_max_age=600
+    )
 }
 
 # Password validation
