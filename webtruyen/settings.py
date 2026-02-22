@@ -32,11 +32,11 @@ INSTALLED_APPS = [
 ]
 
 JAZZMIN_SETTINGS = {
-    "site_title": "Nguyệt Mộng Thư Admin",
-    "site_header": "Nguyệt Mộng Thư",
+    "site_title": "Thiên Mộng Hành Admin",
+    "site_header": "Thiên Mộng Hành",
     "site_brand": "Quản trị Nguyệt Mộng",
     "welcome_sign": "Chào mừng bạn đến với hệ thống quản trị truyện",
-    "copyright": "Nguyệt Mộng Thư Ltd",
+    "copyright": "Thiên Mộng Hành Ltd",
     "search_model": ["story.Story"],
     "topmenu_links": [
         {"name": "Trang chủ web", "url": "/", "new_window": True},
