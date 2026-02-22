@@ -5,30 +5,30 @@ import dj_database_url
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-# --- SECURITY ---
-# Sử dụng biến môi trường để bảo mật Secret Key trên Render
+# --- 1. SECURITY (BẢO MẬT) ---
+# Lấy SECRET_KEY từ biến môi trường của Render
 SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-15&9bm1ik@+8py!xjzxn&6k3_td#8mi79wq-#m4df%bz(0$3r7')
 
-# Tự động tắt DEBUG khi chạy trên Render (môi trường Production)
+# Tự động tắt DEBUG khi lên Render, bật khi chạy ở máy (Local)
 DEBUG = 'RENDER' not in os.environ
 
-# --- TỰ ĐỘNG CẤU HÌNH HOST ---
+# --- 2. HOST CONFIG (CẤU HÌNH TÊN MIỀN) ---
 ALLOWED_HOSTS = ['localhost', '127.0.0.1']
 
-# Lấy hostname từ Render (ví dụ: web-story-deployment-new.onrender.com)
+# Tự động lấy tên miền từ Render
 RENDER_EXTERNAL_HOSTNAME = os.environ.get('RENDER_EXTERNAL_HOSTNAME')
 if RENDER_EXTERNAL_HOSTNAME:
     ALLOWED_HOSTS.append(RENDER_EXTERNAL_HOSTNAME)
 
-# --- APPLICATION DEFINITION ---
+# --- 3. APPLICATION DEFINITION ---
 INSTALLED_APPS = [
-    'jazzmin',
+    'jazzmin', # Phải nằm trên cùng
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
-    'whitenoise.runserver_nostatic', # Hỗ trợ static file
+    'whitenoise.runserver_nostatic', # Hỗ trợ file tĩnh khi DEBUG=False
     'django.contrib.staticfiles',
     'cloudinary', 
     'story',
@@ -36,7 +36,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
-    'whitenoise.middleware.WhiteNoiseMiddleware', # QUAN TRỌNG: Phải nằm sau SecurityMiddleware
+    'whitenoise.middleware.WhiteNoiseMiddleware', # Phải nằm ngay dưới SecurityMiddleware
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -50,7 +50,7 @@ ROOT_URLCONF = 'webtruyen.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [BASE_DIR / 'templates'],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -64,26 +64,40 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'webtruyen.wsgi.application'
 
-# --- DATABASE (Tự động chuyển đổi Local <-> Render) ---
+# --- 4. DATABASE (CẤU HÌNH KẾT NỐI SSL CHO RENDER) ---
 DATABASES = {
     'default': dj_database_url.config(
-        # Nếu không thấy biến môi trường DATABASE_URL, nó sẽ dùng Database ở localhost
+        # Link database local (dùng khi chạy máy nhà)
         default='postgresql://postgres:1234@localhost:5432/webtruyen',
-        conn_max_age=600
+        conn_max_age=600,
+        conn_health_checks=True,
     )
 }
 
-# --- STATIC & MEDIA FILES ---
+# QUAN TRỌNG: Bắt buộc dùng SSL khi chạy trên Render để tránh lỗi 500
+if 'RENDER' in os.environ:
+    DATABASES['default']['OPTIONS'] = {
+        'sslmode': 'require',
+    }
+
+# --- 5. STATIC & MEDIA (FILE TĨNH & ẢNH) ---
 STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 
-# Cấu hình lưu trữ file tĩnh tối ưu cho Render
-STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+# Cấu hình lưu trữ mới cho Django 5.x (Thay thế STATICFILES_STORAGE cũ)
+STORAGES = {
+    "default": {
+        "BACKEND": "django.core.files.storage.FileSystemStorage",
+    },
+    "staticfiles": {
+        "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
+    },
+}
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
-# --- CLOUDINARY CONFIG ---
+# --- 6. CLOUDINARY CONFIG ---
 CLOUDINARY_CLOUD_NAME = 'dqb9trxs4'
 CLOUDINARY_API_KEY = '526277124128331'
 CLOUDINARY_API_SECRET = 'lBNZfs38GP1iGvMKXCRzjDzZcss'
@@ -96,7 +110,7 @@ cloudinary.config(
     secure=True
 )
 
-# --- JAZZMIN SETTINGS ---
+# --- 7. JAZZMIN UI CONFIG ---
 JAZZMIN_SETTINGS = {
     "site_title": "Thiên Mộng Hành Admin",
     "site_header": "Thiên Mộng Hành",
@@ -104,9 +118,6 @@ JAZZMIN_SETTINGS = {
     "welcome_sign": "Chào mừng bạn đến với hệ thống quản trị truyện",
     "copyright": "Thiên Mộng Hành Ltd",
     "search_model": ["story.Story"],
-    "topmenu_links": [
-        {"name": "Trang chủ web", "url": "/", "new_window": True},
-    ],
     "show_sidebar": True,
     "navigation_expanded": True,
     "icons": {
@@ -117,7 +128,6 @@ JAZZMIN_SETTINGS = {
         "story.Chapter": "fas fa-file-alt",
         "story.Comment": "fas fa-comments",
     },
-    "order_with_respect_to": ["story", "story.Story", "story.Chapter", "story.Category"],
 }
 
 JAZZMIN_UI_TWEAKS = {
@@ -126,7 +136,7 @@ JAZZMIN_UI_TWEAKS = {
     "accent": "accent-primary",
 }
 
-# --- OTHERS ---
+# --- 8. KHÁC ---
 AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator'},
     {'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator'},
