@@ -12,47 +12,17 @@
         href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@700&family=Inter:wght@400;500;600;700&display=swap"
         rel="stylesheet">
     <link rel="stylesheet" href="{% static 'story/css/style.css' %}">
-    <script>
-        (function () {
-            const html = document.documentElement;
-            html.classList.add("no-transition");
-            try {
-                const theme = localStorage.getItem("theme");
-                if (theme === "light") {
-                    html.classList.add("light-mode");
-                }
-            } catch (e) { }
-        })();
 
-    </script>
-
-    <!-- Tailwind CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        'primary': '#EAB308',
-                        'secondary': '#f97316',
-                        'dark-bg-body': '#262626',
-                        'dark-bg-card': '#333333',
-                        'dark-border': '#4b5563',
-                    },
-                    fontFamily: {
-                        sans: ['Inter', 'sans-serif'],
-                    },
-                }
-            }
-        }
-    </script>
+    <script src="{% static 'story/js/base.js' %}"></script>
+
 </head>
 
 <body class="bg-dark-bg-body font-sans antialiased text-gray-100 min-h-screen flex flex-col">
 
     {% include 'story/header/header.html' %}
 
-    <main class="flex-grow container mx-auto px-4 pt-24 pb-12 mt-6 max-w-7xl">
+    <main class="flex-grow container mx-auto px-6 py-20">
 
         <div class="flex items-center gap-3 mb-10">
             <span class="w-1.5 h-8 bg-primary rounded-full shadow-[0_0_10px_#EAB308]"></span>
@@ -61,7 +31,7 @@
             </h1>
         </div>
 
-        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-6">
+        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2">
             {% for story in stories %}
             <div
                 class="story-card group relative flex flex-col h-full overflow-hidden rounded-xl bg-dark-bg-card border border-transparent hover:border-primary/50 transition-all duration-300">

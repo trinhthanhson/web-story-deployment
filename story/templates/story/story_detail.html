@@ -12,40 +12,10 @@
         href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@700&family=Inter:wght@400;500;600;700&display=swap"
         rel="stylesheet">
     <link rel="stylesheet" href="{% static 'story/css/style.css' %}">
-    <script>
-        (function () {
-            const html = document.documentElement;
-            html.classList.add("no-transition");
-            try {
-                const theme = localStorage.getItem("theme");
-                if (theme === "light") {
-                    html.classList.add("light-mode");
-                }
-            } catch (e) { }
-        })();
-
-    </script>
-
-    <!-- Tailwind CDN -->
+   
     <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        'primary': '#EAB308',
-                        'secondary': '#f97316',
-                        'dark-bg-body': '#262626',
-                        'dark-bg-card': '#333333',
-                        'dark-border': '#4b5563',
-                    },
-                    fontFamily: {
-                        sans: ['Inter', 'sans-serif'],
-                    },
-                }
-            }
-        }
-    </script>
+    <script src="{% static 'story/js/base.js' %}"></script>
+
 </head>
 
 <body class="font-sans antialiased story-detail-page">
@@ -66,7 +36,6 @@
                 </svg>
             </button>
         </div>
-
         <div class="flex-1 overflow-y-auto chapter-list-scroll p-4 space-y-1">
             {% for chapter in chapters %}
             <a href="{% url 'chapter_detail' story.slug chapter.chapter_number|floatformat:0 %}"
@@ -158,31 +127,40 @@
                                 class="btn-primary px-8 py-3 rounded-lg flex items-center justify-center min-w-[140px]">Đọc
                                 từ đầu</a>
                             {% endif %}
-                            <div class="flex flex-col items-start">
+                            <div class="flex items-center gap-3">
+    <button onclick="toggleSidebar()"
+        class="h-10 px-5 rounded-lg flex items-center justify-center bg-gray-300 text-gray-800 text-sm font-semibold transition-all hover:bg-gray-400">
+        Danh sách chương
+        {% if story.chapter_count > 0 %}
+            <span class="ml-1 text-xs">({{ story.chapter_count }})</span>
+        {% endif %}
+    </button>
 
-                                <button onclick="toggleSidebar()"
-                                    class="px-8 py-3 rounded-lg flex items-center justify-center min-w-[140px] text-gray-800 bg-gray-300">
+<button type="button" id="favorite-btn" data-story-id="{{ story.slug }}"
+        class="h-10 px-4 rounded-lg flex items-center justify-center gap-2 transition-all duration-300 border text-sm font-medium
+        {% if is_favorite %} border-red-500 text-red-500 bg-red-500/10 {% else %} border-gray-600 text-gray-400 hover:border-red-500 hover:text-red-500 {% endif %}">
+        
+        <svg id="heart-icon" class="w-4 h-4 {% if is_favorite %} fill-current {% endif %}" 
+            fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z">
+            </path>
+        </svg>
+        
+        <span id="favorite-text">
+            {% if is_favorite %} Đã thích {% else %} Yêu thích {% endif %}
+        </span>
+    </button>
+</div>
 
-                                    Danh sách chương
-
-                                    {% if story.chapter_count > 0 %}
-                                    <span class="ml-2 text-sm">
-                                        ({{ story.chapter_count }})
-                                    </span>
-                                    {% endif %}
-
-                                </button>
-
-                                {% if story.chapter_count == 0 %}
-                                <span class="text-xs text-gray-400 mt-1 italic ml-10">
-                                    Đang cập nhật...
-                                </span>
-                                {% endif %}
-
-                            </div>
-
-                        </div>
+    
+                       </div>
+                        
+{% if story.chapter_count == 0 %}
+    <p class="text-xs text-gray-500 italic mt-1.5 ml-8">Đang cập nhật...</p>
+{% endif %}
                     </div>
+                    
                 </div>
 
                 <div class="glass-panel p-6">
@@ -301,6 +279,56 @@
                 body.style.overflow = 'auto';
             }
         }
+
+document.addEventListener('DOMContentLoaded', function() {
+    const favoriteBtn = document.getElementById('favorite-btn');
+    
+    if (favoriteBtn) {
+        favoriteBtn.addEventListener('click', function(e) {
+            // Sử dụng currentTarget để luôn lấy đúng phần tử mang ID (dù click vào icon hay text)
+            const btn = e.currentTarget;
+            const storyId = btn.getAttribute('data-story-id');
+            const text = document.getElementById('favorite-text');
+            const icon = document.getElementById('heart-icon');
+
+            if (!storyId) {
+                console.error("Không tìm thấy Story ID trên thuộc tính data-story-id");
+                return;
+            }
+
+            fetch(`/favorite/${storyId}/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': '{{ csrf_token }}',
+                    'Content-Type': 'application/json'
+                },
+            })
+            .then(response => {
+                if (response.status === 401 || response.redirected) {
+                    window.location.href = "{% url 'login' %}";
+                    return;
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data && data.status === 'success') {
+                    if (data.is_favorite) {
+                        btn.classList.add('border-red-500', 'text-red-500', 'bg-red-500/10');
+                        btn.classList.remove('border-gray-600', 'text-gray-400');
+                        icon.classList.add('fill-current');
+                        text.innerText = 'Đã thích';
+                    } else {
+                        btn.classList.remove('border-red-500', 'text-red-500', 'bg-red-500/10');
+                        btn.classList.add('border-gray-600', 'text-gray-400');
+                        icon.classList.remove('fill-current');
+                        text.innerText = 'Yêu thích';
+                    }
+                }
+            })
+            .catch(err => console.error("Lỗi Fetch:", err));
+        });
+    }
+});
     </script>
 </body>
 
