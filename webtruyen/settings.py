@@ -1,20 +1,23 @@
 import os
 from pathlib import Path
 import dj_database_url
-from django.utils.translation import gettext_lazy as _
+
+# Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-
+# --- 1. SECURITY ---
 SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-15&9bm1ik@+8py!xjzxn&6k3_td#8mi79wq-#m4df%bz(0$3r7')
 
+# Tắt DEBUG khi lên Render, bật khi chạy Local
 DEBUG = 'RENDER' not in os.environ
 
+# --- 2. HOST CONFIG ---
 ALLOWED_HOSTS = ['localhost', '127.0.0.1']
-
 RENDER_EXTERNAL_HOSTNAME = os.environ.get('RENDER_EXTERNAL_HOSTNAME')
 if RENDER_EXTERNAL_HOSTNAME:
     ALLOWED_HOSTS.append(RENDER_EXTERNAL_HOSTNAME)
 
+# --- 3. APPLICATION DEFINITION ---
 INSTALLED_APPS = [
     'jazzmin',
     'django.contrib.admin',
@@ -22,16 +25,16 @@ INSTALLED_APPS = [
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
-    'whitenoise.runserver_nostatic', 
+    'whitenoise.runserver_nostatic',
     'django.contrib.staticfiles',
     'cloudinary', 
     'story',
 ]
+
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
-    'whitenoise.middleware.WhiteNoiseMiddleware', 
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
-    'django.middleware.locale.LocaleMiddleware', 
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
@@ -41,13 +44,10 @@ MIDDLEWARE = [
 
 ROOT_URLCONF = 'webtruyen.urls'
 
-LOCALE_PATHS = [
-    BASE_DIR / 'locale/',
-]
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [BASE_DIR / 'templates'],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -61,21 +61,39 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'webtruyen.wsgi.application'
 
+# --- 4. DATABASE (SỬA LỖI KẾT NỐI EXTERNAL URL) ---
 DATABASES = {
     'default': dj_database_url.config(
+        # Link database local
         default='postgresql://postgres:1234@localhost:5432/webtruyen',
-        conn_max_age=600
+        conn_max_age=600,
+        conn_health_checks=True,
     )
 }
 
+# Cấu hình đặc biệt cho Render External Database
+if 'RENDER' in os.environ:
+    # Render yêu cầu SSL cho External URL
+    DATABASES['default']['OPTIONS'] = {
+        'sslmode': 'require',
+    }
+
+# --- 5. STATIC & MEDIA ---
 STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 
-STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+STORAGES = {
+    "default": {
+        "BACKEND": "django.core.files.storage.FileSystemStorage",
+    },
+    "staticfiles": {
+"BACKEND": "whitenoise.storage.CompressedStaticFilesStorage",    },
+}
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
+# --- 6. CLOUDINARY ---
 CLOUDINARY_CLOUD_NAME = 'dqb9trxs4'
 CLOUDINARY_API_KEY = '526277124128331'
 CLOUDINARY_API_SECRET = 'lBNZfs38GP1iGvMKXCRzjDzZcss'
@@ -88,6 +106,7 @@ cloudinary.config(
     secure=True
 )
 
+# --- 7. JAZZMIN & OTHERS ---
 JAZZMIN_SETTINGS = {
     "site_title": "Thiên Mộng Hành Admin",
     "site_header": "Thiên Mộng Hành",
@@ -95,9 +114,6 @@ JAZZMIN_SETTINGS = {
     "welcome_sign": "Chào mừng bạn đến với hệ thống quản trị truyện",
     "copyright": "Thiên Mộng Hành Ltd",
     "search_model": ["story.Story"],
-    "topmenu_links": [
-        {"name": "Trang chủ web", "url": "/", "new_window": True},
-    ],
     "show_sidebar": True,
     "navigation_expanded": True,
     "icons": {
@@ -108,7 +124,6 @@ JAZZMIN_SETTINGS = {
         "story.Chapter": "fas fa-file-alt",
         "story.Comment": "fas fa-comments",
     },
-    "order_with_respect_to": ["story", "story.Story", "story.Chapter", "story.Category"],
 }
 
 JAZZMIN_UI_TWEAKS = {
@@ -116,14 +131,6 @@ JAZZMIN_UI_TWEAKS = {
     "navbar_variant": "navbar-dark",
     "accent": "accent-primary",
 }
-
-# --- OTHERS ---
-AUTH_PASSWORD_VALIDATORS = [
-    {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator'},
-    {'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator'},
-    {'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator'},
-    {'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator'},
-]
 
 LANGUAGE_CODE = 'en-us'
 TIME_ZONE = 'UTC'
